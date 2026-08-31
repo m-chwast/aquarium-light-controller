@@ -1,9 +1,9 @@
 idf_component_register(
     SRCS 
         "main.c"
-        "main_app_entry.cpp"
-        "rtos.cpp"
-        "display.cpp"
+        "main_app_entry.c"
+        "rtos.c"
+        "display.c"
         "display_ll.c"
     INCLUDE_DIRS "."
     REQUIRES 

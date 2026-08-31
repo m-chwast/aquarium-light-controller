@@ -1,9 +1,9 @@
-#include "rtos.hpp"
+#include "rtos.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-void RTOS::delay_ms(unsigned ms) {
+void rtos_delay_ms(unsigned ms) {
 	const unsigned ticks = pdMS_TO_TICKS(ms);
 	vTaskDelay(ticks);
 }

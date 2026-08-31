@@ -12,7 +12,7 @@
 #define LCD_WIDTH 320
 #define LCD_HEIGHT 240
 
-#define INITIAL_COLOR 0x03A0
+#define INITIAL_COLOR 0x07E0
 
 static void* callback_ctx = NULL;
 
