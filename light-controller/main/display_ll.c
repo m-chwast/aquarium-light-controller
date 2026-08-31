@@ -14,8 +14,6 @@
 #define LCD_WIDTH 320
 #define LCD_HEIGHT 240
 
-#define INITIAL_COLOR 0x07E0
-
 static void* callback_ctx = NULL;
 
 static esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -23,8 +21,6 @@ static esp_lcd_panel_handle_t panel_handle = NULL;
 
 static bool lcd_callback(esp_lcd_panel_io_handle_t panel_io,
 						 esp_lcd_panel_io_event_data_t* edata, void* user_ctx);
-
-static bool display_ll_init_lvgl(void);
 
 bool display_ll_init(void) {
 	bool result = true;
@@ -57,10 +53,6 @@ bool display_ll_init(void) {
 	ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
 	if(result) {
-		result = display_ll_init_lvgl();
-	}
-
-	if(result) {
 		ESP_LOGI(TAG, "LCD task initialization complete");
 	}
 	else {
@@ -70,53 +62,15 @@ bool display_ll_init(void) {
 	return result;
 }
 
+unsigned display_ll_get_width(void) { return LCD_WIDTH; }
+
+unsigned display_ll_get_height(void) { return LCD_HEIGHT; }
+
+void* display_ll_get_panel_handle(void) { return panel_handle; }
+
+void* display_ll_get_io_handle(void) { return io_handle; }
+
 static bool lcd_callback(esp_lcd_panel_io_handle_t panel_io,
 						 esp_lcd_panel_io_event_data_t* edata, void* user_ctx) {
-	return true;
-}
-
-static bool display_ll_init_lvgl(void) {
-	const lvgl_port_cfg_t lvgl_cfg = {
-		.task_priority = 4,
-		.task_stack = 4096,
-		.task_affinity = -1,
-		.task_max_sleep_ms = 500,
-		.timer_period_ms = 5,
-	};
-
-	ESP_ERROR_CHECK(lvgl_port_init(&lvgl_cfg));
-
-	const lvgl_port_display_cfg_t display_cfg = {
-		.io_handle = io_handle,
-		.panel_handle = panel_handle,
-		.buffer_size = LCD_WIDTH * 40,
-		.double_buffer = true,
-		.hres = LCD_WIDTH,
-		.vres = LCD_HEIGHT,
-		.monochrome = false,
-		.rotation =
-			{
-				.swap_xy = false,
-				.mirror_x = false,
-				.mirror_y = false,
-			},
-		.flags =
-			{
-				.buff_dma = true,
-				.buff_spiram = false,
-				.sw_rotate = false,
-			},
-	};
-
-	lv_display_t* display = lvgl_port_add_disp(&display_cfg);
-
-	lvgl_port_lock(0);
-
-	lv_obj_t* scr = lv_screen_active();
-
-	lv_obj_set_style_bg_color(scr, lv_color_hex(0x0000FF), LV_PART_MAIN);
-
-	lvgl_port_unlock();
-
 	return true;
 }
