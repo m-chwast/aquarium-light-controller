@@ -29,8 +29,8 @@ void display_lvgl_init(void) {
 		.rotation =
 			{
 				.swap_xy = false,
-				.mirror_x = true,
-				.mirror_y = false,
+				.mirror_x = false,
+				.mirror_y = true,
 			},
 		.flags =
 			{
@@ -60,9 +60,7 @@ static void display_lvgl_init_port(void) {
 }
 
 static void display_lvgl_draw_initial_screen_custom(void) {
-	// lvgl_port_lock(0);
-
-	// lvgl_port_unlock();
+	lvgl_port_lock(0);
 
 	lv_obj_t* btn = lv_btn_create(lv_screen_active());
 
@@ -100,6 +98,8 @@ static void display_lvgl_draw_initial_screen_custom(void) {
 	lv_obj_t* label3 = lv_label_create(btn3);
 	lv_label_set_text(label3, "BLUE");
 	lv_obj_center(label3);
+
+	lvgl_port_unlock();
 }
 
 static void display_lvgl_draw_initial_screen(void) {

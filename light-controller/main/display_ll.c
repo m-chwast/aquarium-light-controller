@@ -8,6 +8,7 @@
 #include "esp_lvgl_port.h"
 #include "lvgl.h"
 #include "periphs.h"
+#include "esp_lcd_ili9341_init_cmds_2.h"
 
 #define TAG "LL_DISP"
 
@@ -30,7 +31,7 @@ bool display_ll_init(void) {
 	ESP_LOGI(TAG, "Initialize SPI bus");
 	const spi_bus_config_t bus_config = ILI9341_PANEL_BUS_SPI_CONFIG(
 		GPIO_LCD_PCLK, GPIO_LCD_MOSI, LCD_HEIGHT * 80 * sizeof(uint16_t));
-	ESP_ERROR_CHECK(
+		ESP_ERROR_CHECK(
 		spi_bus_initialize(SPI_HOST_LCD, &bus_config, SPI_DMA_CH_AUTO));
 
 	ESP_LOGI(TAG, "Install panel IO");
@@ -41,10 +42,15 @@ bool display_ll_init(void) {
 		(esp_lcd_spi_bus_handle_t)SPI_HOST_LCD, &io_config, &io_handle));
 
 	ESP_LOGI(TAG, "Install ILI9341 panel driver");
+	ili9341_vendor_config_t vendor_config = {
+		.init_cmds = ili9341_lcd_init_vendor,
+		.init_cmds_size = sizeof(ili9341_lcd_init_vendor) / sizeof(ili9341_lcd_init_cmd_t),
+	};
 	const esp_lcd_panel_dev_config_t panel_config = {
 		.reset_gpio_num = GPIO_LCD_RST,				 // Set to -1 if not use
-		.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,	 // RGB element order: RGB
+		.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,	 // RGB element order: RGB
 		.bits_per_pixel = 16,  // Implemented by LCD command `3Ah` (16/18)
+		.vendor_config = &vendor_config,
 	};
 	ESP_ERROR_CHECK(
 		esp_lcd_new_panel_ili9341(io_handle, &panel_config, &panel_handle));
