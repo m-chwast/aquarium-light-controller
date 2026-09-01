@@ -36,7 +36,7 @@ bool display_ll_init(void) {
 	ESP_LOGI(TAG, "Install panel IO");
 
 	const esp_lcd_panel_io_spi_config_t io_config = ILI9341_PANEL_IO_SPI_CONFIG(
-		GPIO_LCD_CS, GPIO_LCD_DC, lcd_callback, &callback_ctx);
+		GPIO_LCD_CS, GPIO_LCD_DC, NULL, NULL);
 	ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(
 		(esp_lcd_spi_bus_handle_t)SPI_HOST_LCD, &io_config, &io_handle));
 

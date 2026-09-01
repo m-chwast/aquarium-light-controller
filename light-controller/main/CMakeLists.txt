@@ -9,4 +9,6 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES 
         "esp_lcd"
-        "esp_lcd_ili9341")
+        "esp_lcd_ili9341"
+        "lvgl"
+        )
