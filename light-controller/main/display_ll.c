@@ -43,7 +43,7 @@ bool display_ll_init(void) {
 	ESP_LOGI(TAG, "Install ILI9341 panel driver");
 	const esp_lcd_panel_dev_config_t panel_config = {
 		.reset_gpio_num = GPIO_LCD_RST,				 // Set to -1 if not use
-		.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,	 // RGB element order: R-G-B
+		.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,	 // RGB element order: RGB
 		.bits_per_pixel = 16,  // Implemented by LCD command `3Ah` (16/18)
 	};
 	ESP_ERROR_CHECK(

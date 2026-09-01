@@ -25,6 +25,7 @@ void display_lvgl_init(void) {
 		.hres = lcd_width,
 		.vres = lcd_height,
 		.monochrome = false,
+		.color_format = LV_COLOR_FORMAT_RGB565,
 		.rotation =
 			{
 				.swap_xy = false,
@@ -36,7 +37,7 @@ void display_lvgl_init(void) {
 				.buff_dma = true,
 				.buff_spiram = false,
 				.sw_rotate = false,
-
+				.swap_bytes = true,
 			},
 	};
 
@@ -59,19 +60,49 @@ static void display_lvgl_init_port(void) {
 }
 
 static void display_lvgl_draw_initial_screen_custom(void) {
-	lvgl_port_lock(0);
+	// lvgl_port_lock(0);
 
-	lv_obj_t* scr = lv_screen_active();
-	lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), LV_PART_MAIN);
+	// lvgl_port_unlock();
 
-	lv_obj_t* label = lv_label_create(scr);
-	lv_label_set_text(label, "Hello LVGL!");
+	lv_obj_t* btn = lv_btn_create(lv_screen_active());
+
+	// button top
+	lv_obj_set_size(btn, 120, 60);
+	lv_obj_align_to(btn, NULL, LV_ALIGN_TOP_MID, 0, 20);
+
+	lv_obj_set_style_bg_color(btn, lv_color_hex(0x00FF00), LV_PART_MAIN);
+	lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_PART_MAIN);
+
+	lv_obj_t* label = lv_label_create(btn);
+	lv_label_set_text(label, "GREEN");
 	lv_obj_center(label);
 
-	lvgl_port_unlock();
+	// button middle
+	lv_obj_t* btn2 = lv_btn_create(lv_screen_active());
+	lv_obj_set_size(btn2, 120, 60);
+	lv_obj_center(btn2);
+
+	lv_obj_set_style_bg_color(btn2, lv_color_hex(0xFF0000), LV_PART_MAIN);
+	lv_obj_set_style_bg_opa(btn2, LV_OPA_COVER, LV_PART_MAIN);
+
+	lv_obj_t* label2 = lv_label_create(btn2);
+	lv_label_set_text(label2, "RED");
+	lv_obj_center(label2);
+
+	// button bottom
+	lv_obj_t* btn3 = lv_btn_create(lv_screen_active());
+	lv_obj_set_size(btn3, 120, 60);
+	lv_obj_align_to(btn3, NULL, LV_ALIGN_BOTTOM_MID, 0, -20);
+
+	lv_obj_set_style_bg_color(btn3, lv_color_hex(0x0000FF), LV_PART_MAIN);
+	lv_obj_set_style_bg_opa(btn3, LV_OPA_COVER, LV_PART_MAIN);
+
+	lv_obj_t* label3 = lv_label_create(btn3);
+	lv_label_set_text(label3, "BLUE");
+	lv_obj_center(label3);
 }
 
 static void display_lvgl_draw_initial_screen(void) {
-	// display_lvgl_draw_initial_screen_custom();
-	lv_demo_benchmark();
+	display_lvgl_draw_initial_screen_custom();
+	// lv_demo_benchmark();
 }
