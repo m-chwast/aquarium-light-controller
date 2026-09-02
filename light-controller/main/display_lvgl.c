@@ -103,6 +103,6 @@ static void display_lvgl_draw_initial_screen_custom(void) {
 }
 
 static void display_lvgl_draw_initial_screen(void) {
-	display_lvgl_draw_initial_screen_custom();
-	// lv_demo_benchmark();
+	// display_lvgl_draw_initial_screen_custom();
+	lv_demo_benchmark();
 }

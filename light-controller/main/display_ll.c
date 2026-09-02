@@ -1,6 +1,7 @@
 #include "display_ll.h"
 
 #include "esp_lcd_ili9341.h"
+#include "esp_lcd_ili9341_init_cmds_2.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_vendor.h"
@@ -8,20 +9,14 @@
 #include "esp_lvgl_port.h"
 #include "lvgl.h"
 #include "periphs.h"
-#include "esp_lcd_ili9341_init_cmds_2.h"
 
 #define TAG "LL_DISP"
 
 #define LCD_WIDTH 320
 #define LCD_HEIGHT 240
 
-static void* callback_ctx = NULL;
-
 static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL;
-
-static bool lcd_callback(esp_lcd_panel_io_handle_t panel_io,
-						 esp_lcd_panel_io_event_data_t* edata, void* user_ctx);
 
 bool display_ll_init(void) {
 	bool result = true;
@@ -29,22 +24,24 @@ bool display_ll_init(void) {
 	ESP_LOGI(TAG, "Hello, LCD!");
 
 	ESP_LOGI(TAG, "Initialize SPI bus");
+	const int max_transfer_size = LCD_WIDTH * 40 * sizeof(uint16_t);
 	const spi_bus_config_t bus_config = ILI9341_PANEL_BUS_SPI_CONFIG(
-		GPIO_LCD_PCLK, GPIO_LCD_MOSI, LCD_HEIGHT * 80 * sizeof(uint16_t));
-		ESP_ERROR_CHECK(
+		GPIO_LCD_PCLK, GPIO_LCD_MOSI, max_transfer_size);
+	ESP_ERROR_CHECK(
 		spi_bus_initialize(SPI_HOST_LCD, &bus_config, SPI_DMA_CH_AUTO));
 
 	ESP_LOGI(TAG, "Install panel IO");
 
-	const esp_lcd_panel_io_spi_config_t io_config = ILI9341_PANEL_IO_SPI_CONFIG(
-		GPIO_LCD_CS, GPIO_LCD_DC, NULL, NULL);
+	const esp_lcd_panel_io_spi_config_t io_config =
+		ILI9341_PANEL_IO_SPI_CONFIG(GPIO_LCD_CS, GPIO_LCD_DC, NULL, NULL);
 	ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(
 		(esp_lcd_spi_bus_handle_t)SPI_HOST_LCD, &io_config, &io_handle));
 
 	ESP_LOGI(TAG, "Install ILI9341 panel driver");
 	ili9341_vendor_config_t vendor_config = {
 		.init_cmds = ili9341_lcd_init_vendor,
-		.init_cmds_size = sizeof(ili9341_lcd_init_vendor) / sizeof(ili9341_lcd_init_cmd_t),
+		.init_cmds_size =
+			sizeof(ili9341_lcd_init_vendor) / sizeof(ili9341_lcd_init_cmd_t),
 	};
 	const esp_lcd_panel_dev_config_t panel_config = {
 		.reset_gpio_num = GPIO_LCD_RST,				 // Set to -1 if not use
@@ -75,8 +72,3 @@ unsigned display_ll_get_height(void) { return LCD_HEIGHT; }
 void* display_ll_get_panel_handle(void) { return panel_handle; }
 
 void* display_ll_get_io_handle(void) { return io_handle; }
-
-static bool lcd_callback(esp_lcd_panel_io_handle_t panel_io,
-						 esp_lcd_panel_io_event_data_t* edata, void* user_ctx) {
-	return true;
-}
