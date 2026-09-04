@@ -19,6 +19,7 @@
 
 static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL;
+static esp_lcd_touch_handle_t touch_handle = NULL;
 
 static void display_ll_touch_init(void);
 
@@ -83,10 +84,11 @@ void* display_ll_get_panel_handle(void) { return panel_handle; }
 
 void* display_ll_get_io_handle(void) { return io_handle; }
 
+void* display_ll_get_touch_handle(void) { return touch_handle; }
+
 static void display_ll_touch_init(void) {
 	ESP_LOGI(TAG, "Initialize touch controller");
 
-	esp_lcd_touch_handle_t tp = NULL;
 	esp_lcd_panel_io_handle_t tp_io_handle = NULL;
 	esp_lcd_panel_io_spi_config_t tp_io_config =
 		ESP_LCD_TOUCH_IO_SPI_XPT2046_CONFIG(GPIO_TOUCH_CS);
@@ -110,6 +112,7 @@ static void display_ll_touch_init(void) {
 	};
 
 	ESP_LOGI(TAG, "Initialize touch controller XPT2046");
-	ESP_ERROR_CHECK(esp_lcd_touch_new_spi_xpt2046(tp_io_handle, &tp_cfg, &tp));
+	ESP_ERROR_CHECK(
+		esp_lcd_touch_new_spi_xpt2046(tp_io_handle, &tp_cfg, &touch_handle));
 	ESP_LOGI(TAG, "Touch controller initialized");
 }

@@ -1,12 +1,17 @@
 #include "display_lvgl.h"
 
 #include "display_ll.h"
+#include "esp_log.h"
 #include "esp_lvgl_port.h"
 #include "lv_demos.h"
 #include "lvgl.h"
 
 static void display_lvgl_init_port(void);
+static void display_lvgl_init_touch(void);
 static void display_lvgl_draw_initial_screen(void);
+
+static lv_display_t* display = NULL;
+static lv_indev_t* indev = NULL;  // input device driver (Touch)
 
 void display_lvgl_init(void) {
 	display_lvgl_init_port();
@@ -41,7 +46,9 @@ void display_lvgl_init(void) {
 			},
 	};
 
-	lv_display_t* display = lvgl_port_add_disp(&display_cfg);
+	display = lvgl_port_add_disp(&display_cfg);
+
+	display_lvgl_init_touch();
 
 	display_lvgl_draw_initial_screen();
 }
@@ -57,6 +64,43 @@ static void display_lvgl_init_port(void) {
 	};
 
 	ESP_ERROR_CHECK(lvgl_port_init(&lvgl_cfg));
+}
+
+static void example_lvgl_touch_cb(lv_indev_t* indev, lv_indev_data_t* data) {
+	uint16_t touchpad_x[1] = {0};
+	uint16_t touchpad_y[1] = {0};
+	uint8_t touchpad_cnt = 0;
+
+	esp_lcd_touch_handle_t touch_pad = lv_indev_get_user_data(indev);
+	esp_lcd_touch_read_data(touch_pad);
+	/* Get coordinates */
+	bool touchpad_pressed = esp_lcd_touch_get_coordinates(
+		touch_pad, touchpad_x, touchpad_y, NULL, &touchpad_cnt, 1);
+
+	static bool last_touchpad_pressed = false;
+
+	if(touchpad_pressed && touchpad_cnt > 0) {
+		data->point.x = touchpad_x[0];
+		data->point.y = touchpad_y[0];
+		data->state = LV_INDEV_STATE_PRESSED;
+		ESP_LOGI("TOUCH", "Touch at (%d, %d)", data->point.x, data->point.y);
+	}
+	else {
+		data->state = LV_INDEV_STATE_RELEASED;
+	}
+}
+
+static void display_lvgl_init_touch(void) {
+	indev = lv_indev_create();
+
+	assert(indev);
+	assert(display);
+
+	lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+
+	lv_indev_set_display(indev, display);
+	lv_indev_set_user_data(indev, display_ll_get_touch_handle());
+	lv_indev_set_read_cb(indev, example_lvgl_touch_cb);
 }
 
 static void display_lvgl_draw_initial_screen_custom(void) {
@@ -103,6 +147,6 @@ static void display_lvgl_draw_initial_screen_custom(void) {
 }
 
 static void display_lvgl_draw_initial_screen(void) {
-	// display_lvgl_draw_initial_screen_custom();
-	lv_demo_benchmark();
+	display_lvgl_draw_initial_screen_custom();
+	// lv_demo_benchmark();
 }
