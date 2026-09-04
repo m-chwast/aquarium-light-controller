@@ -5,6 +5,8 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_vendor.h"
+#include "esp_lcd_touch.h"
+#include "esp_lcd_touch_xpt2046.h"
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
 #include "lvgl.h"
@@ -18,6 +20,8 @@
 static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL;
 
+static void display_ll_touch_init(void);
+
 bool display_ll_init(void) {
 	bool result = true;
 
@@ -25,8 +29,12 @@ bool display_ll_init(void) {
 
 	ESP_LOGI(TAG, "Initialize SPI bus");
 	const int max_transfer_size = LCD_WIDTH * 40 * sizeof(uint16_t);
-	const spi_bus_config_t bus_config = ILI9341_PANEL_BUS_SPI_CONFIG(
-		GPIO_LCD_PCLK, GPIO_LCD_MOSI, max_transfer_size);
+	const spi_bus_config_t bus_config = {.miso_io_num = GPIO_LCD_MISO,
+										 .mosi_io_num = GPIO_LCD_MOSI,
+										 .sclk_io_num = GPIO_LCD_PCLK,
+										 .quadwp_io_num = -1,
+										 .quadhd_io_num = -1,
+										 .max_transfer_sz = max_transfer_size};
 	ESP_ERROR_CHECK(
 		spi_bus_initialize(SPI_HOST_LCD, &bus_config, SPI_DMA_CH_AUTO));
 
@@ -55,6 +63,8 @@ bool display_ll_init(void) {
 	ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
 	ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
+	display_ll_touch_init();
+
 	if(result) {
 		ESP_LOGI(TAG, "LCD task initialization complete");
 	}
@@ -72,3 +82,34 @@ unsigned display_ll_get_height(void) { return LCD_HEIGHT; }
 void* display_ll_get_panel_handle(void) { return panel_handle; }
 
 void* display_ll_get_io_handle(void) { return io_handle; }
+
+static void display_ll_touch_init(void) {
+	ESP_LOGI(TAG, "Initialize touch controller");
+
+	esp_lcd_touch_handle_t tp = NULL;
+	esp_lcd_panel_io_handle_t tp_io_handle = NULL;
+	esp_lcd_panel_io_spi_config_t tp_io_config =
+		ESP_LCD_TOUCH_IO_SPI_XPT2046_CONFIG(GPIO_TOUCH_CS);
+	ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(
+		(esp_lcd_spi_bus_handle_t)SPI_HOST_LCD, &tp_io_config, &tp_io_handle));
+
+	const unsigned lcd_width = display_ll_get_width();
+	const unsigned lcd_height = display_ll_get_height();
+
+	esp_lcd_touch_config_t tp_cfg = {
+		.x_max = lcd_width,
+		.y_max = lcd_height,
+		.rst_gpio_num = -1,
+		.int_gpio_num = -1,
+		.flags =
+			{
+				.swap_xy = 0,
+				.mirror_x = 0,
+				.mirror_y = 0,
+			},
+	};
+
+	ESP_LOGI(TAG, "Initialize touch controller XPT2046");
+	ESP_ERROR_CHECK(esp_lcd_touch_new_spi_xpt2046(tp_io_handle, &tp_cfg, &tp));
+	ESP_LOGI(TAG, "Touch controller initialized");
+}
