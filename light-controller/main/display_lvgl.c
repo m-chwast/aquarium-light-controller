@@ -8,6 +8,7 @@
 
 static void display_lvgl_init_port(void);
 static void display_lvgl_init_touch(void);
+static lv_obj_t* display_lvgl_create_touch_cursor(void);
 static void display_lvgl_draw_initial_screen(void);
 
 static lv_display_t* display = NULL;
@@ -51,6 +52,9 @@ void display_lvgl_init(void) {
 	display_lvgl_init_touch();
 
 	display_lvgl_draw_initial_screen();
+
+	// after initial screen is drawn
+	lv_indev_set_cursor(indev, display_lvgl_create_touch_cursor());
 }
 
 static void display_lvgl_init_port(void) {
@@ -77,8 +81,6 @@ static void example_lvgl_touch_cb(lv_indev_t* indev, lv_indev_data_t* data) {
 	bool touchpad_pressed = esp_lcd_touch_get_coordinates(
 		touch_pad, touchpad_x, touchpad_y, NULL, &touchpad_cnt, 1);
 
-	static bool last_touchpad_pressed = false;
-
 	if(touchpad_pressed && touchpad_cnt > 0) {
 		data->point.x = touchpad_x[0];
 		data->point.y = touchpad_y[0];
@@ -101,6 +103,21 @@ static void display_lvgl_init_touch(void) {
 	lv_indev_set_display(indev, display);
 	lv_indev_set_user_data(indev, display_ll_get_touch_handle());
 	lv_indev_set_read_cb(indev, example_lvgl_touch_cb);
+}
+
+static lv_obj_t* display_lvgl_create_touch_cursor(void) {
+	lv_obj_t* cursor = lv_obj_create(lv_screen_active());
+
+	lv_obj_remove_style_all(cursor);
+	lv_obj_set_size(cursor, 18, 18);
+	lv_obj_set_style_radius(cursor, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+	lv_obj_set_style_bg_color(cursor, lv_color_hex(0x000000), LV_PART_MAIN);
+	lv_obj_set_style_bg_opa(cursor, LV_OPA_COVER, LV_PART_MAIN);
+	lv_obj_set_style_border_width(cursor, 2, LV_PART_MAIN);
+	lv_obj_set_style_border_color(cursor, lv_color_hex(0x000000), LV_PART_MAIN);
+	lv_obj_add_flag(cursor, LV_OBJ_FLAG_HIDDEN);
+
+	return cursor;
 }
 
 static void display_lvgl_draw_initial_screen_custom(void) {
