@@ -34,5 +34,5 @@
     "OPENOCD_USB_ADAPTER_LOCATION": "3-5"
   },
   "idf.port": "/dev/ttyACM0",
-  "idf.flashType": "DFU"
+  "idf.flashType": "JTAG"
 }
