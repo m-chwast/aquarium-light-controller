@@ -5,6 +5,7 @@ idf_component_register(
         "rtos.c"
         "console/console.c"
         "console/console_cmd.c"
+        "console/console_cmd_handles.c"
         "display/display.c"
         "display/display_ll.c"
         "display/display_lvgl.c"
