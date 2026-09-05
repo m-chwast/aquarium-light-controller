@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "main_app_entry.c"
         "rtos.c"
+        "console/console.c"
         "display/display.c"
         "display/display_ll.c"
         "display/display_lvgl.c"
