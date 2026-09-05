@@ -61,6 +61,16 @@ void rtos_queue_receive(const rtos_queue_t queue, void* item) {
 	}
 }
 
+bool rtos_queue_is_empty(const rtos_queue_t queue) {
+	const QueueHandle_t handle = (QueueHandle_t)queue.handle;
+	const BaseType_t message_count = uxQueueMessagesWaiting(handle);
+
+	if(message_count == 0) {
+		return true;
+	}
+	return false;
+}
+
 unsigned rtos_queue_get_free_space(const rtos_queue_t queue) {
 	const QueueHandle_t handle = (QueueHandle_t)queue.handle;
 	const BaseType_t space_available = uxQueueSpacesAvailable(handle);

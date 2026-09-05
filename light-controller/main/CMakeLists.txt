@@ -9,6 +9,7 @@ idf_component_register(
         "display/display.c"
         "display/display_ll.c"
         "display/display_lvgl.c"
+        "display/display_request.c"
     INCLUDE_DIRS "."
     REQUIRES 
         "esp_lcd"

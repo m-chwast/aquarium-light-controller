@@ -2,6 +2,7 @@
 
 #include "display_ll.h"
 #include "display_lvgl.h"
+#include "display_request.h"
 #include "rtos.h"
 
 #define DISPLAY_TAG "DISPLAY"
@@ -13,6 +14,7 @@ static void display_task_handler(void* arg);
 void display_init(void) {
 	display_ll_init();
 	display_lvgl_init();
+	display_request_init();
 
 	display_task =
 		rtos_create_task(display_task_handler, DISPLAY_TAG,
