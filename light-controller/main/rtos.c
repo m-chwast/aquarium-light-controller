@@ -1,6 +1,7 @@
 #include "rtos.h"
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 
 static void rtos_fault_handler(void);
@@ -32,6 +33,32 @@ rtos_task_t rtos_create_task(rtos_task_handler_t task_function,
 	}
 
 	return task;
+}
+
+rtos_queue_t rtos_create_queue(unsigned item_count, unsigned item_size) {
+	rtos_queue_t queue = {0};
+
+	QueueHandle_t handle = xQueueCreate(item_count, item_size);
+	if(handle == NULL) {
+		rtos_fault_handler();
+	}
+
+	queue.handle = handle;
+	return queue;
+}
+
+void rtos_queue_send(const rtos_queue_t queue, const void* item) {
+	const QueueHandle_t handle = (QueueHandle_t)queue.handle;
+	if(xQueueSend(handle, item, portMAX_DELAY) != pdTRUE) {
+		rtos_fault_handler();
+	}
+}
+
+void rtos_queue_receive(const rtos_queue_t queue, void* item) {
+	const QueueHandle_t handle = (QueueHandle_t)queue.handle;
+	if(xQueueReceive(handle, item, portMAX_DELAY) != pdTRUE) {
+		rtos_fault_handler();
+	}
 }
 
 static void rtos_fault_handler(void) {

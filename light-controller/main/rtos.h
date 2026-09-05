@@ -23,9 +23,18 @@ typedef enum rtos_task_stack_size_t {
 	RTOS_TASK_STACK_SIZE_16KB = 16384,
 } rtos_task_stack_size_t;
 
+typedef struct rtos_queue_t {
+	void* handle;
+} rtos_queue_t;
+
 void rtos_delay_ms(unsigned ms);
 
 rtos_task_t rtos_create_task(rtos_task_handler_t task_function,
 							 const char* name,
 							 rtos_task_stack_size_t stack_size,
 							 rtos_task_priority_t priority);
+
+rtos_queue_t rtos_create_queue(unsigned item_count, unsigned item_size);
+
+void rtos_queue_send(const rtos_queue_t queue, const void* item);
+void rtos_queue_receive(const rtos_queue_t queue, void* item);
