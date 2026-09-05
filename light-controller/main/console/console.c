@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+#include "console_cmd.h"
 #include "esp_log.h"
 #include "rtos.h"
 
@@ -69,7 +70,9 @@ static void console_process(void) {
 	// remove the termination character
 	line[i - 1] = '\0';
 
-    ESP_LOGI(CONSOLE_TAG, "Received line: %s", line);
+	ESP_LOGI(CONSOLE_TAG, "Received line: %s", line);
+
+	console_cmd_process(line);
 }
 
 static void console_task_handler(void* arg) {
