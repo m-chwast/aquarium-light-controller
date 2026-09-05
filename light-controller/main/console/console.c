@@ -7,14 +7,16 @@
 
 #define CONSOLE_TAG "CONSOLE"
 
+#define CONSOLE_BUFFER_SIZE 256
+
 static void console_task_handler(void* arg);
 
 typedef struct console_t {
 	rtos_task_t task;
 
-	char buffer[1024];
-	unsigned buffer_current_size;
-	unsigned buffer_start_index;
+	rtos_queue_t rx_buffer;
+	bool ready_to_parse;
+	bool rx_overflow;
 } console_t;
 
 static console_t console;
@@ -22,7 +24,7 @@ static console_t console;
 void console_init(void) {
 	ESP_LOGI(CONSOLE_TAG, "Initializing");
 
-	memset(&console, 0, sizeof(console));
+	console.rx_buffer = rtos_create_queue(CONSOLE_BUFFER_SIZE, sizeof(char));
 
 	console.task =
 		rtos_create_task(console_task_handler, CONSOLE_TAG,
@@ -31,7 +33,24 @@ void console_init(void) {
 	ESP_LOGI(CONSOLE_TAG, "Init ok");
 }
 
-static void console_append_char(char c) {}
+static void console_append_char(char c) {
+	if(c == '\r') {
+		c = '\n';
+	}
+
+	const unsigned free_space = rtos_queue_get_free_space(console.rx_buffer);
+	if(free_space == 0) {
+		// flush queue and mark the overflow
+		console.rx_overflow = true;
+		rtos_queue_reset(console.rx_buffer);
+	}
+
+	rtos_queue_send(console.rx_buffer, &c);
+
+	if(c == '\n') {
+		console.ready_to_parse = true;
+	}
+}
 
 static void console_task_handler(void* arg) {
 	while(true) {

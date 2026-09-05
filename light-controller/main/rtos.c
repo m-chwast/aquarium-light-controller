@@ -61,6 +61,22 @@ void rtos_queue_receive(const rtos_queue_t queue, void* item) {
 	}
 }
 
+unsigned rtos_queue_get_free_space(const rtos_queue_t queue) {
+	const QueueHandle_t handle = (QueueHandle_t)queue.handle;
+	const BaseType_t space_available = uxQueueSpacesAvailable(handle);
+	const unsigned space_u = (unsigned)space_available;
+	return space_u;
+}
+
+void rtos_queue_reset(const rtos_queue_t queue) {
+	const QueueHandle_t handle = (QueueHandle_t)queue.handle;
+	const BaseType_t result = xQueueReset(handle);
+
+	if(result != pdTRUE) {
+		rtos_fault_handler();
+	}
+}
+
 static void rtos_fault_handler(void) {
 	while(1) {
 	};

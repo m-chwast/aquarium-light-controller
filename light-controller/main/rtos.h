@@ -38,3 +38,5 @@ rtos_queue_t rtos_create_queue(unsigned item_count, unsigned item_size);
 
 void rtos_queue_send(const rtos_queue_t queue, const void* item);
 void rtos_queue_receive(const rtos_queue_t queue, void* item);
+unsigned rtos_queue_get_free_space(const rtos_queue_t queue);
+void rtos_queue_reset(const rtos_queue_t queue);
