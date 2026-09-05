@@ -5,7 +5,6 @@
 #include "rtos.h"
 
 #define DISPLAY_TAG "DISPLAY"
-#define DISPLAY_TASK_STACK_SIZE 2048
 
 static rtos_task_t display_task;
 
@@ -17,7 +16,7 @@ void display_init(void) {
 
 	display_task =
 		rtos_create_task(display_task_handler, DISPLAY_TAG,
-						 DISPLAY_TASK_STACK_SIZE, RTOS_PRIORITY_NORMAL);
+						 RTOS_TASK_STACK_SIZE_2KB, RTOS_PRIORITY_NORMAL);
 }
 
 static void display_task_handler(void* arg) {
