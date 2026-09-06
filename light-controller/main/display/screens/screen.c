@@ -5,6 +5,9 @@
 
 typedef struct screen_t {
 	screen_code_t active_screen;
+	screen_code_t previous_screen;
+
+	bool is_locked;
 
 	struct screen_calibration_t {
 		lv_obj_t* screen;
@@ -13,7 +16,7 @@ typedef struct screen_t {
 
 	struct screen_main_t {
 		lv_obj_t* screen;
-        lv_obj_t* label;
+		lv_obj_t* label;
 	} screen_main;
 } screen_t;
 
@@ -26,19 +29,27 @@ static void screen_display_active(void);
 
 void screen_init(void) {
 	screen.active_screen = SCREEN_CODE_MAIN;
+	screen.previous_screen = SCREEN_CODE_MAIN;
+
 	screen_init_main();
 	screen_init_calib();
 
 	screen_display_active();
 }
 
-void screen_set_active(screen_code_t screen_code) {
-	if(screen_code != screen.active_screen) {
+void screen_display(screen_code_t screen_code) {
+	if((screen.is_locked == false) && (screen_code != screen.active_screen)) {
+		screen.previous_screen = screen.active_screen;
+
 		screen.active_screen = screen_code;
 
 		screen_display_active();
 	}
 }
+
+void screen_display_previous(void) { screen_display(screen.previous_screen); }
+
+void screen_set_lock(bool is_locked) { screen.is_locked = is_locked; }
 
 static void show_target(int x, int y) {
 	struct screen_calibration_t* cal = &screen.screen_calibration;
@@ -84,10 +95,10 @@ static void screen_init_main(void) {
 	lv_obj_set_style_bg_color(main->screen, lv_color_black(), LV_PART_MAIN);
 	lv_obj_set_style_bg_opa(main->screen, LV_OPA_COVER, LV_PART_MAIN);
 
-    main->label = lv_label_create(main->screen);
-    lv_label_set_text(main->label, "Main screen");
-    lv_obj_set_style_text_color(main->label, lv_color_white(), 0);
-    lv_obj_align(main->label, LV_ALIGN_CENTER, 0, 0);
+	main->label = lv_label_create(main->screen);
+	lv_label_set_text(main->label, "Main screen");
+	lv_obj_set_style_text_color(main->label, lv_color_white(), 0);
+	lv_obj_align(main->label, LV_ALIGN_CENTER, 0, 0);
 
 	lvgl_port_unlock();
 }

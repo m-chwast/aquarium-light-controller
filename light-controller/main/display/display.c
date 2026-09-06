@@ -40,7 +40,13 @@ static void display_process_request(display_request_type_t request_type) {
 			break;
 		}
 		case DISPLAY_REQUEST_TYPE_CALIBRATION: {
-			screen_set_active(SCREEN_CODE_CALIBRATION);
+			screen_set_lock(true);
+			screen_display(SCREEN_CODE_CALIBRATION);
+			break;
+		}
+		case DISPLAY_REQUEST_TYPE_CALIBRATION_ABORT: {
+			screen_set_lock(false);
+			screen_display_previous();
 			break;
 		}
 	}
