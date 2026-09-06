@@ -40,8 +40,8 @@ static void display_process_request(display_request_type_t request_type) {
 			break;
 		}
 		case DISPLAY_REQUEST_TYPE_CALIBRATION: {
-			screen_set_lock(true);
 			screen_display(SCREEN_CODE_CALIBRATION);
+			screen_set_lock(true); // set so no other request can change the screen
 			break;
 		}
 		case DISPLAY_REQUEST_TYPE_CALIBRATION_ABORT: {
