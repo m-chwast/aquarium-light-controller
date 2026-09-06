@@ -10,6 +10,7 @@ idf_component_register(
         "display/display_ll.c"
         "display/display_lvgl.c"
         "display/display_request.c"
+        "display/display_calibration.c"
         "display/screens/screen.c"
         "display/screens/screen_display_calibration.c"
         "display/screens/screen_main.c"

@@ -1,5 +1,6 @@
 #include "display.h"
 
+#include "display_calibration.h"
 #include "display_ll.h"
 #include "display_lvgl.h"
 #include "display_request.h"
@@ -31,6 +32,8 @@ static void display_task_handler(void* arg) {
 
 		const display_request_type_t request_type = display_request_receive();
 		display_process_request(request_type);
+
+		display_calibration_manage();
 	}
 }
 
@@ -40,11 +43,26 @@ static void display_process_request(display_request_type_t request_type) {
 			break;
 		}
 		case DISPLAY_REQUEST_TYPE_CALIBRATION: {
+			const bool is_calibration_active = display_calibration_is_active();
+			if(is_calibration_active) {
+				break;
+			}
+
+			display_calibration_start();
+
 			screen_display(SCREEN_CODE_CALIBRATION);
-			screen_set_lock(true); // set so no other request can change the screen
+			// set so no other request can change the screen
+			screen_set_lock(true);
 			break;
 		}
 		case DISPLAY_REQUEST_TYPE_CALIBRATION_ABORT: {
+			const bool is_calibration_active = display_calibration_is_active();
+			if(!is_calibration_active) {
+				break;
+			}
+
+			display_calibration_abort();
+
 			screen_set_lock(false);
 			screen_display_previous();
 			break;
