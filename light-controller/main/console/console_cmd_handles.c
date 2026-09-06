@@ -9,3 +9,8 @@ void console_cmd_handles_calib(void) {
 	ESP_LOGI(CONSOLE_CMD_TAG, "Display calibration command received");
 	display_request_send(DISPLAY_REQUEST_TYPE_CALIBRATION);
 }
+
+void console_cmd_handles_calib_abort(void) {
+	ESP_LOGI(CONSOLE_CMD_TAG, "Display calibration abort command received");
+	display_request_send(DISPLAY_REQUEST_TYPE_CALIBRATION_ABORT);
+}

@@ -13,6 +13,9 @@ void console_cmd_process(const char* cmd) {
 	if(console_cmd_is_equal(cmd, "calib")) {
 		console_cmd_handles_calib();
 	}
+	else if(console_cmd_is_equal(cmd, "calib_abort")) {
+		console_cmd_handles_calib_abort();
+	}
 	else {
 		ESP_LOGW(CONSOLE_CMD_TAG, "Unknown command: %s", cmd);
 	}
