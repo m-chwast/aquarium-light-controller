@@ -1,16 +1,27 @@
 #include "display_input.h"
 
 #include "display_calibration.h"
+#include "rtos.h"
 
 typedef struct display_input_t {
 	int x;
 	int y;
 	bool is_pressed;
+
+	rtos_mutex_t mutex;
 } display_input_t;
 
 static display_input_t display_input;
 
 static void display_input_set_lock(bool is_locked);
+
+void display_input_init(void) {
+	display_input.x = 0;
+	display_input.y = 0;
+	display_input.is_pressed = false;
+
+	display_input.mutex = rtos_create_mutex();
+}
 
 display_input_data_t display_input_get_data(void) {
 	display_input_data_t data = {0};
@@ -51,7 +62,9 @@ display_input_data_t display_input_get_data_raw(void) {
 
 static void display_input_set_lock(bool is_locked) {
 	if(is_locked) {
+		rtos_mutex_lock(display_input.mutex);
 	}
 	else {
+		rtos_mutex_unlock(display_input.mutex);
 	}
 }

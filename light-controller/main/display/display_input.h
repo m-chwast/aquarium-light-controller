@@ -8,6 +8,8 @@ typedef struct display_input_data_t {
 	bool is_pressed;
 } display_input_data_t;
 
+void display_input_init(void);
+
 display_input_data_t display_input_get_data(void);
 
 // data before calibration

@@ -1,6 +1,7 @@
 #include "display.h"
 
 #include "display_calibration.h"
+#include "display_input.h"
 #include "display_ll.h"
 #include "display_lvgl.h"
 #include "display_request.h"
@@ -18,6 +19,9 @@ void display_init(void) {
 	display_ll_init();
 	display_lvgl_init();
 	display_request_init();
+	display_input_init();
+
+	// procedure modules
 	display_calibration_init();
 
 	screen_init();
