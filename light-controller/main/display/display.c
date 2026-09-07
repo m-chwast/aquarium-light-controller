@@ -18,6 +18,7 @@ void display_init(void) {
 	display_ll_init();
 	display_lvgl_init();
 	display_request_init();
+	display_calibration_init();
 
 	screen_init();
 
@@ -32,8 +33,6 @@ static void display_task_handler(void* arg) {
 
 		const display_request_type_t request_type = display_request_receive();
 		display_process_request(request_type);
-
-		display_calibration_manage();
 	}
 }
 

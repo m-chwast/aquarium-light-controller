@@ -7,6 +7,8 @@ typedef struct display_calibration_point_t {
 	int y;
 } display_calibration_point_t;
 
+void display_calibration_init(void);
+
 void display_calibration_start(void);
 
 void display_calibration_abort(void);
@@ -14,8 +16,6 @@ void display_calibration_abort(void);
 void display_calibration_reset(void);
 
 bool display_calibration_is_active(void);
-
-void display_calibration_manage(void);
 
 display_calibration_point_t display_calibration_get_calibrated_coordinates(
 	display_calibration_point_t raw_point);
