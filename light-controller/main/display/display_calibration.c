@@ -23,7 +23,8 @@ typedef enum display_calibration_state_t {
 	DISPLAY_CALIBRATION_STATE_P4,
 	DISPLAY_CALIBRATION_STATE_P5_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P5,
-	DISPLAY_CALIBRATION_STATE_FINISHED,
+	DISPLAY_CALIBRATION_STATE_FINALIZE,
+	DISPLAY_CALIBRATION_STATE_FINISHED
 } display_calibration_state_t;
 
 typedef struct display_calibration_t {
@@ -116,7 +117,7 @@ static void display_calibration_handler(void* arg) {
 	}
 
 	while(1) {
-		rtos_delay_ms(200);
+		rtos_delay_ms(50);
 		display_calibration_manage();
 	};
 }
@@ -227,11 +228,11 @@ static void display_calibration_manage(void) {
 			if(point_ok) {
 				display_calibration_record_point(4, x, y);
 				display_calibration_set_state(
-					DISPLAY_CALIBRATION_STATE_FINISHED);
+					DISPLAY_CALIBRATION_STATE_FINALIZE);
 			}
 			break;
 		}
-		case DISPLAY_CALIBRATION_STATE_FINISHED: {
+		case DISPLAY_CALIBRATION_STATE_FINALIZE: {
 			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_X1,
 							 display_calibration.raw_points[0].x);
 			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_Y1,
@@ -258,8 +259,15 @@ static void display_calibration_manage(void) {
 			display_calibration.is_initialized = true;
 			display_calibration_load_all();
 
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_IDLE);
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_FINISHED);
 
+			// send request to abort as last command, this resets the state
+			// machine in effect
+			display_request_send(DISPLAY_REQUEST_TYPE_CALIBRATION_ABORT);
+
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_FINISHED: {
 			break;
 		}
 	}
