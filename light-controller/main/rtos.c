@@ -1,7 +1,9 @@
 #include "rtos.h"
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/atomic.h"
 #include "freertos/queue.h"
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 
 static void rtos_fault_handler(void);
@@ -85,6 +87,38 @@ void rtos_queue_reset(const rtos_queue_t queue) {
 	if(result != pdTRUE) {
 		rtos_fault_handler();
 	}
+}
+
+rtos_mutex_t rtos_create_mutex(void) {
+	rtos_mutex_t mutex = {0};
+
+	SemaphoreHandle_t handle = xSemaphoreCreateMutex();
+	if(handle == NULL) {
+		rtos_fault_handler();
+	}
+
+	mutex.handle = handle;
+	return mutex;
+}
+
+void rtos_mutex_lock(const rtos_mutex_t mutex) {
+	const SemaphoreHandle_t handle = (SemaphoreHandle_t)mutex.handle;
+
+	if(handle == NULL) {
+		rtos_fault_handler();
+	}
+
+	xSemaphoreTake(handle, portMAX_DELAY);
+}
+
+void rtos_mutex_unlock(const rtos_mutex_t mutex) {
+	const SemaphoreHandle_t handle = (SemaphoreHandle_t)mutex.handle;
+
+	if(handle == NULL) {
+		rtos_fault_handler();
+	}
+
+	xSemaphoreGive(handle);
 }
 
 static void rtos_fault_handler(void) {

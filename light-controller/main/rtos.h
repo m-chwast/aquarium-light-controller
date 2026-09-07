@@ -29,6 +29,10 @@ typedef struct rtos_queue_t {
 	void* handle;
 } rtos_queue_t;
 
+typedef struct rtos_mutex_t {
+	void* handle;
+} rtos_mutex_t;
+
 void rtos_delay_ms(unsigned ms);
 
 rtos_task_t rtos_create_task(rtos_task_handler_t task_function,
@@ -43,3 +47,7 @@ void rtos_queue_receive(const rtos_queue_t queue, void* item);
 bool rtos_queue_is_empty(const rtos_queue_t queue);
 unsigned rtos_queue_get_free_space(const rtos_queue_t queue);
 void rtos_queue_reset(const rtos_queue_t queue);
+
+rtos_mutex_t rtos_create_mutex(void);
+void rtos_mutex_lock(const rtos_mutex_t mutex);
+void rtos_mutex_unlock(const rtos_mutex_t mutex);
