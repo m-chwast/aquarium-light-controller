@@ -8,6 +8,7 @@ idf_component_register(
         "console/console_cmd.c"
         "console/console_cmd_handles.c"
         "display/display.c"
+        "display/display_input.c"
         "display/display_ll.c"
         "display/display_lvgl.c"
         "display/display_request.c"
