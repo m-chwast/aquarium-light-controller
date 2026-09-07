@@ -17,3 +17,6 @@ bool display_calibration_is_active(void);
 
 display_calibration_point_t display_calibration_get_calibrated_coordinates(
 	display_calibration_point_t raw_point);
+
+// only for screen to display the target point
+display_calibration_point_t display_calibration_get_current_target_point(void);

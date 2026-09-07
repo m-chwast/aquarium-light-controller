@@ -36,6 +36,7 @@ typedef struct display_calibration_t {
 	rtos_task_t task;
 
 	display_calibration_state_t state;
+	int current_point_index;
 } display_calibration_t;
 
 static display_calibration_t display_calibration = {
@@ -63,10 +64,12 @@ void display_calibration_init(void) {
 
 void display_calibration_start(void) {
 	display_calibration.state = DISPLAY_CALIBRATION_STATE_STARTED;
+	display_calibration.current_point_index = 0;
 }
 
 void display_calibration_abort(void) {
 	display_calibration.state = DISPLAY_CALIBRATION_STATE_IDLE;
+	display_calibration.current_point_index = 0;
 	display_calibration_load_all();
 }
 
@@ -79,6 +82,18 @@ bool display_calibration_is_active(void) {
 display_calibration_point_t display_calibration_get_calibrated_coordinates(
 	display_calibration_point_t raw_point) {
 	return raw_point;
+}
+
+display_calibration_point_t display_calibration_get_current_target_point(void) {
+	const int index = display_calibration.current_point_index;
+
+	display_calibration_point_t point = {0};
+
+	if((index >= 0) && (index < DISPLAY_CALIBRATION_POINT_COUNT)) {
+		point = display_calibration.target_points[index];
+	}
+
+	return point;
 }
 
 static void display_calibration_handler(void* arg) {
@@ -129,6 +144,7 @@ static void display_calibration_manage(void) {
 		}
 		case DISPLAY_CALIBRATION_STATE_STARTED: {
 			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P1_AWAIT);
+			display_calibration.current_point_index = 0;
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P1_AWAIT: {
@@ -148,6 +164,7 @@ static void display_calibration_manage(void) {
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P2_AWAIT: {
+			display_calibration.current_point_index = 1;
 			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P2);
 			}
@@ -164,6 +181,7 @@ static void display_calibration_manage(void) {
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P3_AWAIT: {
+			display_calibration.current_point_index = 2;
 			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P3);
 			}
@@ -180,6 +198,7 @@ static void display_calibration_manage(void) {
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P4_AWAIT: {
+			display_calibration.current_point_index = 3;
 			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P4);
 			}
@@ -196,6 +215,7 @@ static void display_calibration_manage(void) {
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P5_AWAIT: {
+			display_calibration.current_point_index = 4;
 			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P5);
 			}
