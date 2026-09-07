@@ -20,6 +20,8 @@ typedef struct settings_storage_t {
 	int display_calib_y4;
 	int display_calib_x5;
 	int display_calib_y5;
+
+	bool display_calib_is_performed;
 } settings_storage_t;
 
 typedef struct settings_t {
@@ -33,6 +35,7 @@ static settings_t settings;
 
 static const char* settings_get_key(settings_elem_t elem);
 static int* settings_get_int_ptr(settings_elem_t elem);
+static bool* settings_get_bool_ptr(settings_elem_t elem);
 
 static void settings_task_handler(void* arg);
 
@@ -52,7 +55,7 @@ void settings_init(void) {
 	settings.save_request = false;
 	settings.task =
 		rtos_create_task(settings_task_handler, TAG, RTOS_TASK_STACK_SIZE_4KB,
-						 RTOS_PRIORITY_NORMAL);
+						 RTOS_PRIORITY_LOW);
 }
 
 int settings_get_int(settings_elem_t elem) {
@@ -72,22 +75,35 @@ void settings_set_int(settings_elem_t elem, int value) {
 		if(value != *value_ptr) {
 			const char* const key = settings_get_key(elem);
 
-			nvs_handle_t nvs_handle = {0};
-			esp_err_t err =
-				nvs_open(SETTINGS_NAMESPACE, NVS_READWRITE, &nvs_handle);
-			if(err != ESP_OK) {
-				const char* const err_name = esp_err_to_name(err);
-				ESP_LOGE(TAG, "Error opening NVS handle: %s", err_name);
-			}
-			else {
-				nvs_set_i32(nvs_handle, key, value);
-				nvs_close(nvs_handle);
+			ESP_LOGI(TAG, "Setting %s to %d", key, value);
+			*value_ptr = value;
 
-				ESP_LOGI(TAG, "Setting %s to %d", key, value);
-				*value_ptr = value;
+			settings.save_request = true;
+		}
+	}
+}
 
-				settings.save_request = true;
-			}
+bool settings_get_bool(settings_elem_t elem) {
+	bool value = false;
+
+	bool* const value_ptr = settings_get_bool_ptr(elem);
+	if(value_ptr != NULL) {
+		value = *value_ptr;
+	}
+
+	return value;
+}
+
+void settings_set_bool(settings_elem_t elem, bool value) {
+	bool* const value_ptr = settings_get_bool_ptr(elem);
+	if(value_ptr != NULL) {
+		if(value != *value_ptr) {
+			const char* const key = settings_get_key(elem);
+
+			ESP_LOGI(TAG, "Setting %s to %d", key, value);
+			*value_ptr = value;
+
+			settings.save_request = true;
 		}
 	}
 }
@@ -136,6 +152,23 @@ static int* settings_get_int_ptr(settings_elem_t elem) {
 	return value_ptr;
 }
 
+static bool* settings_get_bool_ptr(settings_elem_t elem) {
+	bool* value_ptr = NULL;
+
+	switch(elem) {
+		case SETTINGS_ELEM_DISPLAY_CALIB_IS_PERFORMED:
+			value_ptr = (bool*)&settings_storage.display_calib_is_performed;
+			break;
+		default: {
+			const char* const elem_name = settings_get_key(elem);
+			ESP_LOGE(TAG, "Invalid settings element: %d, %s", elem, elem_name);
+			break;
+		}
+	}
+
+	return value_ptr;
+}
+
 static const char* settings_get_key(settings_elem_t elem) {
 	const char* key = "";
 
@@ -170,6 +203,9 @@ static const char* settings_get_key(settings_elem_t elem) {
 		case SETTINGS_ELEM_DISPLAY_CALIB_Y5:
 			key = "disp_calib_y5";
 			break;
+		case SETTINGS_ELEM_DISPLAY_CALIB_IS_PERFORMED:
+			key = "disp_calib_done";
+			break;
 		default:
 			key = "unknown";
 			ESP_LOGE(TAG, "Invalid settings element: %d", elem);
@@ -203,7 +239,7 @@ static void settings_task_handler(void* arg) {
 			else {
 				bool nvs_commit_needed = false;
 
-				for(int elem = SETTINGS_ELEM_TYPEBEGIN_INT;
+				for(int elem = SETTINGS_ELEM_TYPEBEGIN_INT + 1;
 					elem < SETTINGS_ELEM_TYPEEND_INT; elem++) {
 					const char* const key = settings_get_key(elem);
 					const int volatile_value = settings_get_int(elem);
@@ -219,6 +255,30 @@ static void settings_task_handler(void* arg) {
 						nvs_commit_needed = true;
 						ESP_LOGI(TAG, "Saved setting %s = %d", key,
 								 volatile_value);
+					}
+					else {
+						const char* const err_name = esp_err_to_name(err);
+						ESP_LOGE(TAG, "Error reading setting %s from NVS: %s",
+								 key, err_name);
+					}
+				}
+
+				for(int elem = SETTINGS_ELEM_TYPEBEGIN_BOOL + 1;
+					elem < SETTINGS_ELEM_TYPEEND_BOOL; elem++) {
+					const char* const key = settings_get_key(elem);
+					const bool volatile_value = *settings_get_bool_ptr(elem);
+
+					uint8_t out_value = 0;
+					const esp_err_t err =
+						nvs_get_u8(nvs_handle, key, &out_value);
+					const bool stored_value = (out_value != 0);
+
+					if((err == ESP_OK) || (err == ESP_ERR_NVS_NOT_FOUND) ||
+					   (stored_value != volatile_value)) {
+						nvs_set_u8(nvs_handle, key, volatile_value ? 1 : 0);
+						nvs_commit_needed = true;
+						ESP_LOGI(TAG, "Saved setting %s = %d", key,
+								 volatile_value ? 1 : 0);
 					}
 					else {
 						const char* const err_name = esp_err_to_name(err);
@@ -257,7 +317,7 @@ static void settings_read_all(void) {
 		ESP_LOGE(TAG, "Error opening NVS handle: %s", err_name);
 	}
 	else {
-		for(int elem = SETTINGS_ELEM_TYPEBEGIN_INT;
+		for(int elem = SETTINGS_ELEM_TYPEBEGIN_INT + 1;
 			elem < SETTINGS_ELEM_TYPEEND_INT; elem++) {
 			const char* const key = settings_get_key(elem);
 			int32_t out_value = 0;
@@ -266,6 +326,28 @@ static void settings_read_all(void) {
 				int* const value_ptr = settings_get_int_ptr(elem);
 				if(value_ptr != NULL) {
 					*value_ptr = out_value;
+					ESP_LOGI(TAG, "Read setting %s = %d", key, out_value);
+				}
+			}
+			else if(err == ESP_ERR_NVS_NOT_FOUND) {
+				ESP_LOGI(TAG, "Setting %s not found in NVS", key);
+			}
+			else {
+				const char* const err_name = esp_err_to_name(err);
+				ESP_LOGE(TAG, "Error reading setting %s from NVS: %s", key,
+						 err_name);
+			}
+		}
+
+		for(int elem = SETTINGS_ELEM_TYPEBEGIN_BOOL + 1;
+			elem < SETTINGS_ELEM_TYPEEND_BOOL; elem++) {
+			const char* const key = settings_get_key(elem);
+			uint8_t out_value = 0;
+			const esp_err_t err = nvs_get_u8(nvs_handle, key, &out_value);
+			if(err == ESP_OK) {
+				bool* const value_ptr = settings_get_bool_ptr(elem);
+				if(value_ptr != NULL) {
+					*value_ptr = (out_value != 0);
 					ESP_LOGI(TAG, "Read setting %s = %d", key, out_value);
 				}
 			}
