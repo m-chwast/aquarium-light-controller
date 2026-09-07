@@ -9,6 +9,17 @@
 
 #define DISPLAY_CALIBRATION_POINT_COUNT 5
 
+typedef enum display_calibration_state_t {
+	DISPLAY_CALIBRATION_STATE_IDLE,
+	DISPLAY_CALIBRATION_STATE_STARTED,
+	DISPLAY_CALIBRATION_STATE_P1,
+	DISPLAY_CALIBRATION_STATE_P2,
+	DISPLAY_CALIBRATION_STATE_P3,
+	DISPLAY_CALIBRATION_STATE_P4,
+	DISPLAY_CALIBRATION_STATE_P5,
+	DISPLAY_CALIBRATION_STATE_FINISHED,
+} display_calibration_state_t;
+
 typedef struct display_calibration_t {
 	const display_calibration_point_t
 		target_points[DISPLAY_CALIBRATION_POINT_COUNT];
@@ -17,6 +28,8 @@ typedef struct display_calibration_t {
 	bool is_initialized;
 
 	rtos_task_t task;
+
+	display_calibration_state_t state;
 } display_calibration_t;
 
 static display_calibration_t display_calibration = {
@@ -32,6 +45,7 @@ static display_calibration_t display_calibration = {
 
 static void display_calibration_handler(void* arg);
 static void display_calibration_manage(void);
+static void display_calibration_load_all(void);
 
 void display_calibration_init(void) {
 	ESP_LOGI(TAG, "Initializing");
@@ -40,13 +54,20 @@ void display_calibration_init(void) {
 						 RTOS_TASK_STACK_SIZE_2KB, RTOS_PRIORITY_LOW);
 }
 
-void display_calibration_start(void) {}
+void display_calibration_start(void) {
+	display_calibration.state = DISPLAY_CALIBRATION_STATE_STARTED;
+}
 
-void display_calibration_abort(void) {}
+void display_calibration_abort(void) {
+	display_calibration.state = DISPLAY_CALIBRATION_STATE_IDLE;
+	display_calibration_load_all();
+}
 
-void display_calibration_reset(void) {}
-
-bool display_calibration_is_active(void) { return false; }
+bool display_calibration_is_active(void) {
+	const bool is_active =
+		(display_calibration.state != DISPLAY_CALIBRATION_STATE_IDLE);
+	return is_active;
+}
 
 display_calibration_point_t display_calibration_get_calibrated_coordinates(
 	display_calibration_point_t raw_point) {
@@ -58,40 +79,113 @@ static void display_calibration_handler(void* arg) {
 		settings_get_bool(SETTINGS_ELEM_DISPLAY_CALIB_IS_PERFORMED);
 
 	if(is_calib_ever_done) {
-		display_calibration.raw_points[0].x =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X1);
-		display_calibration.raw_points[0].y =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y1);
-		display_calibration.raw_points[1].x =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X2);
-		display_calibration.raw_points[1].y =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y2);
-		display_calibration.raw_points[2].x =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X3);
-		display_calibration.raw_points[2].y =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y3);
-		display_calibration.raw_points[3].x =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X4);
-		display_calibration.raw_points[3].y =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y4);
-		display_calibration.raw_points[4].x =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X5);
-		display_calibration.raw_points[4].y =
-			settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y5);
+		display_calibration_load_all();
+
 		display_calibration.is_initialized = true;
+
 		ESP_LOGI(TAG, "Calibration data loaded from settings");
 	}
 	else {
-		ESP_LOGI(
-			TAG,
-			"No calibration data found in settings, requesting calibration");
+		display_calibration.is_initialized = false;
+
+		ESP_LOGI(TAG, "No calibration data found, requesting calibration");
+
 		display_request_send(DISPLAY_REQUEST_TYPE_CALIBRATION);
 	}
 
 	while(1) {
-		rtos_delay_ms(1000);
+		rtos_delay_ms(200);
 		display_calibration_manage();
 	};
 }
 
-static void display_calibration_manage(void) {}
+static void display_calibration_set_state(
+	display_calibration_state_t new_state) {
+	display_calibration.state = new_state;
+}
+
+static void display_calibration_manage(void) {
+	switch(display_calibration.state) {
+		case DISPLAY_CALIBRATION_STATE_IDLE: {
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_STARTED: {
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P1);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P1: {
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P2);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P2: {
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P3);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P3: {
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P4);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P4: {
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P5);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P5: {
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_FINISHED);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_FINISHED: {
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_X1,
+							 display_calibration.raw_points[0].x);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_Y1,
+							 display_calibration.raw_points[0].y);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_X2,
+							 display_calibration.raw_points[1].x);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_Y2,
+							 display_calibration.raw_points[1].y);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_X3,
+							 display_calibration.raw_points[2].x);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_Y3,
+							 display_calibration.raw_points[2].y);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_X4,
+							 display_calibration.raw_points[3].x);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_Y4,
+							 display_calibration.raw_points[3].y);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_X5,
+							 display_calibration.raw_points[4].x);
+			settings_set_int(SETTINGS_ELEM_DISPLAY_CALIB_Y5,
+							 display_calibration.raw_points[4].y);
+
+			settings_set_bool(SETTINGS_ELEM_DISPLAY_CALIB_IS_PERFORMED, true);
+
+			display_calibration.is_initialized = true;
+			display_calibration_load_all();
+
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_IDLE);
+
+			break;
+		}
+	}
+}
+
+static void display_calibration_load_all(void) {
+	display_calibration.raw_points[0].x =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X1);
+	display_calibration.raw_points[0].y =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y1);
+	display_calibration.raw_points[1].x =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X2);
+	display_calibration.raw_points[1].y =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y2);
+	display_calibration.raw_points[2].x =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X3);
+	display_calibration.raw_points[2].y =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y3);
+	display_calibration.raw_points[3].x =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X4);
+	display_calibration.raw_points[3].y =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y4);
+	display_calibration.raw_points[4].x =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X5);
+	display_calibration.raw_points[4].y =
+		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y5);
+}
