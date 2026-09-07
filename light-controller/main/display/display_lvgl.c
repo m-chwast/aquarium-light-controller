@@ -1,5 +1,6 @@
 #include "display_lvgl.h"
 
+#include "display_input.h"
 #include "display_ll.h"
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
@@ -90,6 +91,13 @@ static void example_lvgl_touch_cb(lv_indev_t* indev, lv_indev_data_t* data) {
 	else {
 		data->state = LV_INDEV_STATE_RELEASED;
 	}
+
+	const display_input_data_t input_data = {
+		.x = data->point.x,
+		.y = data->point.y,
+		.is_pressed = (data->state == LV_INDEV_STATE_PRESSED),	
+	};
+	display_input_provide_data(input_data);
 }
 
 static void display_lvgl_init_touch(void) {

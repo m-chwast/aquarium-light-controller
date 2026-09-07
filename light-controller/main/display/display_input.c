@@ -4,9 +4,7 @@
 #include "rtos.h"
 
 typedef struct display_input_t {
-	int x;
-	int y;
-	bool is_pressed;
+	display_input_data_t data;
 
 	rtos_mutex_t mutex;
 } display_input_t;
@@ -16,9 +14,9 @@ static display_input_t display_input;
 static void display_input_set_lock(bool is_locked);
 
 void display_input_init(void) {
-	display_input.x = 0;
-	display_input.y = 0;
-	display_input.is_pressed = false;
+	display_input.data.x = 0;
+	display_input.data.y = 0;
+	display_input.data.is_pressed = false;
 
 	display_input.mutex = rtos_create_mutex();
 }
@@ -26,11 +24,11 @@ void display_input_init(void) {
 display_input_data_t display_input_get_data(void) {
 	display_input_data_t data = {0};
 
-	if(display_input.is_pressed) {
+	if(display_input.data.is_pressed) {
 		display_input_set_lock(true);
 
-		const display_calibration_point_t raw_point = {.x = display_input.x,
-													   .y = display_input.y};
+		const display_calibration_point_t raw_point = {
+			.x = display_input.data.x, .y = display_input.data.y};
 
 		display_input_set_lock(false);
 
@@ -49,15 +47,21 @@ display_input_data_t display_input_get_data(void) {
 display_input_data_t display_input_get_data_raw(void) {
 	display_input_data_t data = {0};
 
-	if(display_input.is_pressed) {
+	if(display_input.data.is_pressed) {
 		display_input_set_lock(true);
-		data.x = display_input.x;
-		data.y = display_input.y;
+		data.x = display_input.data.x;
+		data.y = display_input.data.y;
 		data.is_pressed = true;
 		display_input_set_lock(false);
 	}
 
 	return data;
+}
+
+void display_input_provide_data(display_input_data_t data) {
+	rtos_mutex_lock(display_input.mutex);
+	display_input.data = data;
+	rtos_mutex_unlock(display_input.mutex);
 }
 
 static void display_input_set_lock(bool is_locked) {
