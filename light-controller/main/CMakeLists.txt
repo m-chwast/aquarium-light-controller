@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "main_app_entry.c"
         "rtos.c"
+        "settings.c"
         "console/console.c"
         "console/console_cmd.c"
         "console/console_cmd_handles.c"
@@ -21,4 +22,5 @@ idf_component_register(
         "esp_lcd_touch"
         "esp_lcd_touch_xpt2046"
         "lvgl"
+        "nvs_flash"
         )

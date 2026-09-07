@@ -3,9 +3,13 @@
 #include "console/console.h"
 #include "display/display.h"
 #include "rtos.h"
+#include "settings.h"
 
 void main_app_entry(void) {
 	console_init();
+
+	settings_init();
+
 	display_init();
 
 	while(1) {
