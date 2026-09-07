@@ -58,6 +58,11 @@ display_input_data_t display_input_get_data_raw(void) {
 	return data;
 }
 
+bool display_input_is_pressed(void) {
+	const bool is_pressed = display_input.data.is_pressed;
+	return is_pressed;
+}
+
 void display_input_provide_data(display_input_data_t data) {
 	rtos_mutex_lock(display_input.mutex);
 	display_input.data = data;

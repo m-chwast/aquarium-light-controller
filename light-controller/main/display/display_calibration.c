@@ -13,10 +13,15 @@
 typedef enum display_calibration_state_t {
 	DISPLAY_CALIBRATION_STATE_IDLE,
 	DISPLAY_CALIBRATION_STATE_STARTED,
+	DISPLAY_CALIBRATION_STATE_P1_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P1,
+	DISPLAY_CALIBRATION_STATE_P2_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P2,
+	DISPLAY_CALIBRATION_STATE_P3_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P3,
+	DISPLAY_CALIBRATION_STATE_P4_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P4,
+	DISPLAY_CALIBRATION_STATE_P5_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P5,
 	DISPLAY_CALIBRATION_STATE_FINISHED,
 } display_calibration_state_t;
@@ -116,12 +121,20 @@ static void display_calibration_manage(void) {
 	int x = 0;
 	int y = 0;
 
+	const bool is_pressed = display_input_is_pressed();
+
 	switch(display_calibration.state) {
 		case DISPLAY_CALIBRATION_STATE_IDLE: {
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_STARTED: {
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P1);
+			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P1_AWAIT);
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P1_AWAIT: {
+			if(!is_pressed) {
+				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P1);
+			}
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P1: {
@@ -129,6 +142,13 @@ static void display_calibration_manage(void) {
 
 			if(point_ok) {
 				display_calibration_record_point(0, x, y);
+				display_calibration_set_state(
+					DISPLAY_CALIBRATION_STATE_P2_AWAIT);
+			}
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P2_AWAIT: {
+			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P2);
 			}
 			break;
@@ -138,6 +158,13 @@ static void display_calibration_manage(void) {
 
 			if(point_ok) {
 				display_calibration_record_point(1, x, y);
+				display_calibration_set_state(
+					DISPLAY_CALIBRATION_STATE_P3_AWAIT);
+			}
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P3_AWAIT: {
+			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P3);
 			}
 			break;
@@ -147,6 +174,13 @@ static void display_calibration_manage(void) {
 
 			if(point_ok) {
 				display_calibration_record_point(2, x, y);
+				display_calibration_set_state(
+					DISPLAY_CALIBRATION_STATE_P4_AWAIT);
+			}
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P4_AWAIT: {
+			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P4);
 			}
 			break;
@@ -156,6 +190,13 @@ static void display_calibration_manage(void) {
 
 			if(point_ok) {
 				display_calibration_record_point(3, x, y);
+				display_calibration_set_state(
+					DISPLAY_CALIBRATION_STATE_P5_AWAIT);
+			}
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_P5_AWAIT: {
+			if(!is_pressed) {
 				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P5);
 			}
 			break;

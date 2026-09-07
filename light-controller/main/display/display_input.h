@@ -16,3 +16,5 @@ display_input_data_t display_input_get_data(void);
 
 // data before calibration
 display_input_data_t display_input_get_data_raw(void);
+
+bool display_input_is_pressed(void);
