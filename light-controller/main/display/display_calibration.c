@@ -1,5 +1,6 @@
 #include "display_calibration.h"
 
+#include "display_input.h"
 #include "display_request.h"
 #include "esp_log.h"
 #include "rtos.h"
@@ -46,6 +47,7 @@ static display_calibration_t display_calibration = {
 static void display_calibration_handler(void* arg);
 static void display_calibration_manage(void);
 static void display_calibration_load_all(void);
+static bool display_calibration_check_input(int* x, int* y);
 
 void display_calibration_init(void) {
 	ESP_LOGI(TAG, "Initializing");
@@ -104,7 +106,16 @@ static void display_calibration_set_state(
 	display_calibration.state = new_state;
 }
 
+static void display_calibration_record_point(int index, int x, int y) {
+	ESP_LOGI(TAG, "Calibration point %d recorded: (%d, %d)", index + 1, x, y);
+	display_calibration.raw_points[index].x = x;
+	display_calibration.raw_points[index].y = y;
+}
+
 static void display_calibration_manage(void) {
+	int x = 0;
+	int y = 0;
+
 	switch(display_calibration.state) {
 		case DISPLAY_CALIBRATION_STATE_IDLE: {
 			break;
@@ -114,23 +125,49 @@ static void display_calibration_manage(void) {
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P1: {
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P2);
+			const bool point_ok = display_calibration_check_input(&x, &y);
+
+			if(point_ok) {
+				display_calibration_record_point(0, x, y);
+				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P2);
+			}
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P2: {
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P3);
+			const bool point_ok = display_calibration_check_input(&x, &y);
+
+			if(point_ok) {
+				display_calibration_record_point(1, x, y);
+				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P3);
+			}
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P3: {
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P4);
+			const bool point_ok = display_calibration_check_input(&x, &y);
+
+			if(point_ok) {
+				display_calibration_record_point(2, x, y);
+				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P4);
+			}
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P4: {
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P5);
+			const bool point_ok = display_calibration_check_input(&x, &y);
+
+			if(point_ok) {
+				display_calibration_record_point(3, x, y);
+				display_calibration_set_state(DISPLAY_CALIBRATION_STATE_P5);
+			}
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_P5: {
-			display_calibration_set_state(DISPLAY_CALIBRATION_STATE_FINISHED);
+			const bool point_ok = display_calibration_check_input(&x, &y);
+
+			if(point_ok) {
+				display_calibration_record_point(4, x, y);
+				display_calibration_set_state(
+					DISPLAY_CALIBRATION_STATE_FINISHED);
+			}
 			break;
 		}
 		case DISPLAY_CALIBRATION_STATE_FINISHED: {
@@ -188,4 +225,19 @@ static void display_calibration_load_all(void) {
 		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X5);
 	display_calibration.raw_points[4].y =
 		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y5);
+}
+
+static bool display_calibration_check_input(int* x, int* y) {
+	const display_input_data_t input_data = display_input_get_data_raw();
+
+	bool data_stored = false;
+
+	if(input_data.is_pressed) {
+		*x = input_data.x;
+		*y = input_data.y;
+
+		data_stored = true;
+	}
+
+	return data_stored;
 }
