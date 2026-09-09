@@ -82,22 +82,28 @@ static void example_lvgl_touch_cb(lv_indev_t* indev, lv_indev_data_t* data) {
 	bool touchpad_pressed = esp_lcd_touch_get_coordinates(
 		touch_pad, touchpad_x, touchpad_y, NULL, &touchpad_cnt, 1);
 
-	if(touchpad_pressed && touchpad_cnt > 0) {
-		data->point.x = touchpad_x[0];
-		data->point.y = touchpad_y[0];
+	if(touchpad_cnt < 1) {
+		touchpad_pressed = false;
+	}
+
+	const display_input_data_t input_data = {
+		.x = touchpad_x[0],
+		.y = touchpad_y[0],
+		.is_pressed = touchpad_pressed,
+	};
+	display_input_provide_data(input_data);
+
+	const display_input_data_t input_calibrated = display_input_get_data();
+
+	if(touchpad_pressed) {
+		data->point.x = input_calibrated.x;
+		data->point.y = input_calibrated.y;
 		data->state = LV_INDEV_STATE_PRESSED;
 		ESP_LOGI("TOUCH", "Touch at (%d, %d)", data->point.x, data->point.y);
 	}
 	else {
 		data->state = LV_INDEV_STATE_RELEASED;
 	}
-
-	const display_input_data_t input_data = {
-		.x = data->point.x,
-		.y = data->point.y,
-		.is_pressed = (data->state == LV_INDEV_STATE_PRESSED),	
-	};
-	display_input_provide_data(input_data);
 }
 
 static void display_lvgl_init_touch(void) {
@@ -173,5 +179,4 @@ static void display_lvgl_draw_initial_screen_custom(void) {
 
 static void display_lvgl_draw_initial_screen(void) {
 	display_lvgl_draw_initial_screen_custom();
-	// lv_demo_benchmark();
 }
