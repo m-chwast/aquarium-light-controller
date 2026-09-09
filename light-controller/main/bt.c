@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "esp_log.h"
+#include "esp_nimble_hci.h"
 #include "host/ble_gap.h"
 #include "host/ble_hs.h"
 #include "nimble/nimble_port.h"
@@ -26,6 +27,14 @@ static int gap_event(struct ble_gap_event* event, void* arg) {
 		case BLE_GAP_EVENT_DISC: {
 			const struct ble_gap_disc_desc* d = &event->disc;
 
+			struct ble_hs_adv_fields fields;
+			int rc = ble_hs_adv_parse_fields(&fields, d->data, d->length_data);
+
+			if(rc != 0) {
+				ESP_LOGW(TAG, "Failed to parse advertising data: %d", rc);
+				return 0;
+			}
+
 			char addr_str[18];
 
 			snprintf(addr_str, sizeof(addr_str),
@@ -33,7 +42,14 @@ static int gap_event(struct ble_gap_event* event, void* arg) {
 					 d->addr.val[4], d->addr.val[3], d->addr.val[2],
 					 d->addr.val[1], d->addr.val[0]);
 
-			ESP_LOGI(TAG, "Device: %s RSSI: %d", addr_str, d->rssi);
+			if(fields.name != NULL && fields.name_len > 0) {
+				ESP_LOGI(TAG, "%s  RSSI: %d  Name: %.*s", addr_str, d->rssi,
+						 fields.name_len, fields.name);
+			}
+			else {
+				ESP_LOGI(TAG, "%s  RSSI: %d  Name: <unknown>", addr_str,
+						 d->rssi);
+			}
 
 			return 0;
 		}

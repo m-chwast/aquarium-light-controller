@@ -1,10 +1,10 @@
 #include "main_app_entry.h"
 
+#include "bt.h"
 #include "console/console.h"
 #include "display/display.h"
 #include "rtos.h"
 #include "settings.h"
-#include "bt.h"
 
 void main_app_entry(void) {
 	console_init();

@@ -27,7 +27,7 @@ void display_lvgl_init(void) {
 	const lvgl_port_display_cfg_t display_cfg = {
 		.io_handle = io_handle,
 		.panel_handle = panel_handle,
-		.buffer_size = lcd_width * 80,
+		.buffer_size = lcd_width * 40,
 		.double_buffer = true,
 		.hres = lcd_width,
 		.vres = lcd_height,
@@ -61,7 +61,7 @@ void display_lvgl_init(void) {
 static void display_lvgl_init_port(void) {
 	const lvgl_port_cfg_t lvgl_cfg = {
 		.task_priority = 1,
-		.task_stack = 40960,
+		.task_stack = 6 * 1024,
 		.task_affinity = -1,
 		.task_max_sleep_ms = 500,
 		.timer_period_ms = 15,
