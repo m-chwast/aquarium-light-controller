@@ -4,6 +4,7 @@
 #include "display/display.h"
 #include "rtos.h"
 #include "settings.h"
+#include "bt.h"
 
 void main_app_entry(void) {
 	console_init();
@@ -11,6 +12,8 @@ void main_app_entry(void) {
 	settings_init();
 
 	display_init();
+
+	bt_init();
 
 	while(1) {
 		rtos_delay_ms(1000);
