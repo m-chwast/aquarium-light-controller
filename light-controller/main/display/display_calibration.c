@@ -71,7 +71,7 @@ void display_calibration_init(void) {
 	ESP_LOGI(TAG, "Initializing");
 	display_calibration.task =
 		rtos_create_task(display_calibration_handler, TAG,
-						 RTOS_TASK_STACK_SIZE_2KB, RTOS_PRIORITY_LOW);
+						 RTOS_TASK_STACK_SIZE_4KB, RTOS_PRIORITY_LOW);
 }
 
 void display_calibration_start(void) {
@@ -93,7 +93,19 @@ bool display_calibration_is_active(void) {
 
 display_calibration_point_t display_calibration_get_calibrated_coordinates(
 	display_calibration_point_t raw_point) {
-	return raw_point;
+		display_calibration_point_t calibrated_point = raw_point;
+
+	if(display_calibration.is_initialized) {
+		const float x_a = display_calibration.params_x.a;
+		const float x_b = display_calibration.params_x.b;
+		const float y_a = display_calibration.params_y.a;
+		const float y_b = display_calibration.params_y.b;
+
+		calibrated_point.x = (int)(x_a * raw_point.x + x_b);
+		calibrated_point.y = (int)(y_a * raw_point.y + y_b);
+	}
+
+	return calibrated_point;
 }
 
 display_calibration_point_t display_calibration_get_current_target_point(void) {
@@ -127,6 +139,7 @@ static void display_calibration_handler(void* arg) {
 
 	if(is_calib_ever_done) {
 		display_calibration_load_all();
+		display_calibration_compute_parameters();
 
 		display_calibration.is_initialized = true;
 
