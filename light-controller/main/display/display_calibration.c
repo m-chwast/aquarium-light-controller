@@ -8,8 +8,6 @@
 
 #define TAG "DISP_CALIB"
 
-#define DISPLAY_CALIBRATION_POINT_COUNT 5
-
 #define DISPLAY_CALIBRATION_RESULTS_SHOW_TIME_MS 5000
 
 typedef enum display_calibration_state_t {
@@ -93,8 +91,8 @@ display_calibration_point_t display_calibration_get_current_target_point(void) {
 
 	display_calibration_point_t point = {0};
 
-	if((index >= 0) && (index < DISPLAY_CALIBRATION_POINT_COUNT)) {
-		point = display_calibration.target_points[index];
+	if((index >= 0)) {
+		display_calibration_get_target_coords(index, &point);
 	}
 
 	return point;
@@ -104,6 +102,13 @@ bool display_calibration_should_show_results(void) {
 	const bool should_show_results =
 		(display_calibration.state == DISPLAY_CALIBRATION_STATE_SHOW_RESULTS);
 	return should_show_results;
+}
+
+void display_calibration_get_target_coords(unsigned index,
+										   display_calibration_point_t* point) {
+	if((index < DISPLAY_CALIBRATION_POINT_COUNT) && (point != NULL)) {
+		*point = display_calibration.target_points[index];
+	}
 }
 
 static void display_calibration_handler(void* arg) {
