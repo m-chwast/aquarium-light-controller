@@ -33,8 +33,10 @@ screen_handle_t screen_display_calibration_init(void) {
 
 	/* Crosshair target */
 	for(unsigned i = 0; i < DISPLAY_CALIBRATION_POINT_COUNT; i++) {
-		screen_display_calibration.targets[i] =
-			screen_display_calibration_create_target(screen);
+		lv_obj_t* target = screen_display_calibration_create_target(screen);
+		lv_obj_add_flag(target, LV_OBJ_FLAG_HIDDEN);  // hide targets by default
+
+		screen_display_calibration.targets[i] = target;
 	}
 
 	screen_display_calibration.screen = screen;
@@ -66,6 +68,14 @@ static void screen_display_calibration_manage(void) {
 		const display_calibration_point_t target_point =
 			display_calibration_get_current_target_point();
 
+		// hide all except 0th target
+		lvgl_port_lock(0);
+		for(unsigned i = 1; i < DISPLAY_CALIBRATION_POINT_COUNT; i++) {
+			lv_obj_add_flag(screen_display_calibration.targets[i],
+							LV_OBJ_FLAG_HIDDEN);
+		}
+		lvgl_port_unlock();
+
 		screen_display_calibration_show_target(0, target_point.x,
 											   target_point.y);
 	}
@@ -89,6 +99,8 @@ static void screen_display_calibration_show_target(unsigned index, int x,
 		const int target_x = x - target_half_size;
 		const int target_y = y - target_half_size;
 		lv_obj_set_pos(cal->targets[index], target_x, target_y);
+
+		lv_obj_clear_flag(cal->targets[index], LV_OBJ_FLAG_HIDDEN);
 	}
 
 	lvgl_port_unlock();
