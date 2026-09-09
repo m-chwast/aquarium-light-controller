@@ -60,12 +60,11 @@ void display_lvgl_init(void) {
 
 static void display_lvgl_init_port(void) {
 	const lvgl_port_cfg_t lvgl_cfg = {
-		.task_priority =
-			0,	// for now must be 0 to not trigger IDLE task watchdog
+		.task_priority = 1,
 		.task_stack = 40960,
 		.task_affinity = -1,
 		.task_max_sleep_ms = 500,
-		.timer_period_ms = 5,
+		.timer_period_ms = 15,
 	};
 
 	ESP_ERROR_CHECK(lvgl_port_init(&lvgl_cfg));
