@@ -28,10 +28,18 @@ typedef enum display_calibration_state_t {
 	DISPLAY_CALIBRATION_STATE_FINISHED
 } display_calibration_state_t;
 
+typedef struct display_calibration_parameters_t {
+	float a;
+	float b;
+} display_calibration_parameters_t;
+
 typedef struct display_calibration_t {
 	const display_calibration_point_t
 		target_points[DISPLAY_CALIBRATION_POINT_COUNT];
 	display_calibration_point_t raw_points[DISPLAY_CALIBRATION_POINT_COUNT];
+
+	display_calibration_parameters_t params_x;
+	display_calibration_parameters_t params_y;
 
 	bool is_initialized;
 
@@ -50,11 +58,13 @@ static display_calibration_t display_calibration = {
 			{20, 220},	 // Bottom-left
 			{160, 120}	 // Center
 		},
-};
+	.params_x = {1.0f, 0.0f},
+	.params_y = {1.0f, 0.0f}};
 
 static void display_calibration_handler(void* arg);
 static void display_calibration_manage(void);
 static void display_calibration_load_all(void);
+static void display_calibration_compute_parameters(void);
 static bool display_calibration_check_input(int* x, int* y);
 
 void display_calibration_init(void) {
@@ -244,6 +254,8 @@ static void display_calibration_manage(void) {
 			if(point_ok) {
 				display_calibration_record_point(4, x, y);
 
+				display_calibration_compute_parameters();
+
 				results_show_start_time = rtos_get_time();
 				display_calibration_set_state(
 					DISPLAY_CALIBRATION_STATE_SHOW_RESULTS);
@@ -324,6 +336,94 @@ static void display_calibration_load_all(void) {
 		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_X5);
 	display_calibration.raw_points[4].y =
 		settings_get_int(SETTINGS_ELEM_DISPLAY_CALIB_Y5);
+}
+
+static bool display_calibration_compute_coeffs(float raw_x1, float raw_x2,
+											   float calib_x1, float calib_x2,
+											   float* a, float* b) {
+	bool result = true;
+
+	if((raw_x1 == raw_x2) || raw_x1 == 0.0f) {
+		ESP_LOGE(TAG, "Invalid calibration points, cannot compute parameters");
+		result = false;
+	}
+	else {
+		const float x_b =
+			(raw_x1 * calib_x2 - raw_x2 * calib_x1) / (raw_x1 - raw_x2);
+
+		const float x_a = (calib_x1 - x_b) / raw_x1;
+
+		*a = x_a;
+		*b = x_b;
+	}
+
+	return result;
+}
+
+static void display_calibration_compute_parameters(void) {
+	// parameters computed for:
+	// x_calib = a * x_raw + b
+	// y_calib = c * y_raw + d (in the code also noted as a/b)
+
+	// parameters computed from two points on the diagonal
+	// two separate set of points are taken and then parameters are averaged
+
+	// first diagonal points
+	const unsigned p1_index = 0;
+	const unsigned p2_index = 2;
+
+	const float raw_x1 = display_calibration.raw_points[p1_index].x;
+	const float raw_y1 = display_calibration.raw_points[p1_index].y;
+	const float raw_x2 = display_calibration.raw_points[p2_index].x;
+	const float raw_y2 = display_calibration.raw_points[p2_index].y;
+	const float calib_x1 = display_calibration.target_points[p1_index].x;
+	const float calib_y1 = display_calibration.target_points[p1_index].y;
+	const float calib_x2 = display_calibration.target_points[p2_index].x;
+	const float calib_y2 = display_calibration.target_points[p2_index].y;
+
+	// second diagonal points
+	const unsigned p3_index = 1;
+	const unsigned p4_index = 3;
+
+	const float raw_x3 = display_calibration.raw_points[p3_index].x;
+	const float raw_y3 = display_calibration.raw_points[p3_index].y;
+	const float raw_x4 = display_calibration.raw_points[p4_index].x;
+	const float raw_y4 = display_calibration.raw_points[p4_index].y;
+	const float calib_x3 = display_calibration.target_points[p3_index].x;
+	const float calib_y3 = display_calibration.target_points[p3_index].y;
+	const float calib_x4 = display_calibration.target_points[p4_index].x;
+	const float calib_y4 = display_calibration.target_points[p4_index].y;
+
+	float x_a1 = 0.0f;
+	float x_b1 = 0.0f;
+	float y_a2 = 0.0f;
+	float y_b2 = 0.0f;
+
+	const bool coeffs_x1_ok = display_calibration_compute_coeffs(
+		raw_x1, raw_x2, calib_x1, calib_x2, &x_a1, &x_b1);
+	const bool coeffs_y1_ok = display_calibration_compute_coeffs(
+		raw_y1, raw_y2, calib_y1, calib_y2, &y_a2, &y_b2);
+	const bool coeffs_x2_ok = display_calibration_compute_coeffs(
+		raw_x3, raw_x4, calib_x3, calib_x4, &x_a1, &x_b1);
+	const bool coeffs_y2_ok = display_calibration_compute_coeffs(
+		raw_y3, raw_y4, calib_y3, calib_y4, &y_a2, &y_b2);
+
+	if(coeffs_x1_ok && coeffs_y1_ok && coeffs_x2_ok && coeffs_y2_ok) {
+		const float x_a = (x_a1 + x_a1) / 2.0f;
+		const float x_b = (x_b1 + x_b1) / 2.0f;
+		const float y_a = (y_a2 + y_a2) / 2.0f;
+		const float y_b = (y_b2 + y_b2) / 2.0f;
+
+		display_calibration.params_x.a = x_a;
+		display_calibration.params_x.b = x_b;
+		display_calibration.params_y.a = y_a;
+		display_calibration.params_y.b = y_b;
+
+		ESP_LOGI(TAG,
+				 "Calibration parameters computed: x_a=%.2f, x_b=%.2f, "
+				 "y_a=%.2f, y_b=%.2f",
+				 x_a, x_b, y_a, y_b);
+	}
 }
 
 static bool display_calibration_check_input(int* x, int* y) {
