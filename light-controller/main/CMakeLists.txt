@@ -24,4 +24,5 @@ idf_component_register(
         "esp_lcd_touch_xpt2046"
         "lvgl"
         "nvs_flash"
+        "bt"
         )
