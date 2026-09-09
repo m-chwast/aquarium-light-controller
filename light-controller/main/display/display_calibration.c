@@ -10,6 +10,8 @@
 
 #define DISPLAY_CALIBRATION_POINT_COUNT 5
 
+#define DISPLAY_CALIBRATION_RESULTS_SHOW_TIME_MS 5000
+
 typedef enum display_calibration_state_t {
 	DISPLAY_CALIBRATION_STATE_IDLE,
 	DISPLAY_CALIBRATION_STATE_STARTED,
@@ -23,6 +25,7 @@ typedef enum display_calibration_state_t {
 	DISPLAY_CALIBRATION_STATE_P4,
 	DISPLAY_CALIBRATION_STATE_P5_AWAIT,
 	DISPLAY_CALIBRATION_STATE_P5,
+	DISPLAY_CALIBRATION_STATE_SHOW_RESULTS,
 	DISPLAY_CALIBRATION_STATE_FINALIZE,
 	DISPLAY_CALIBRATION_STATE_FINISHED
 } display_calibration_state_t;
@@ -97,6 +100,12 @@ display_calibration_point_t display_calibration_get_current_target_point(void) {
 	return point;
 }
 
+bool display_calibration_should_show_results(void) {
+	const bool should_show_results =
+		(display_calibration.state == DISPLAY_CALIBRATION_STATE_SHOW_RESULTS);
+	return should_show_results;
+}
+
 static void display_calibration_handler(void* arg) {
 	const bool is_calib_ever_done =
 		settings_get_bool(SETTINGS_ELEM_DISPLAY_CALIB_IS_PERFORMED);
@@ -138,6 +147,8 @@ static void display_calibration_manage(void) {
 	int y = 0;
 
 	const bool is_pressed = display_input_is_pressed();
+
+	static unsigned results_show_start_time = 0;
 
 	switch(display_calibration.state) {
 		case DISPLAY_CALIBRATION_STATE_IDLE: {
@@ -227,6 +238,20 @@ static void display_calibration_manage(void) {
 
 			if(point_ok) {
 				display_calibration_record_point(4, x, y);
+
+				results_show_start_time = rtos_get_time();
+				display_calibration_set_state(
+					DISPLAY_CALIBRATION_STATE_SHOW_RESULTS);
+			}
+			break;
+		}
+		case DISPLAY_CALIBRATION_STATE_SHOW_RESULTS: {
+			const unsigned current_time = rtos_get_time();
+			const unsigned elapsed_time =
+				current_time - results_show_start_time;
+
+			if(elapsed_time >= DISPLAY_CALIBRATION_RESULTS_SHOW_TIME_MS) {
+				results_show_start_time = 0;
 				display_calibration_set_state(
 					DISPLAY_CALIBRATION_STATE_FINALIZE);
 			}

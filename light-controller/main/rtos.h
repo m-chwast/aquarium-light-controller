@@ -51,3 +51,5 @@ void rtos_queue_reset(const rtos_queue_t queue);
 rtos_mutex_t rtos_create_mutex(void);
 void rtos_mutex_lock(const rtos_mutex_t mutex);
 void rtos_mutex_unlock(const rtos_mutex_t mutex);
+
+unsigned rtos_get_time(void);

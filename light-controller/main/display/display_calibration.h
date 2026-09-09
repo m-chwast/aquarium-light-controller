@@ -20,3 +20,5 @@ display_calibration_point_t display_calibration_get_calibrated_coordinates(
 
 // only for screen to display the target point
 display_calibration_point_t display_calibration_get_current_target_point(void);
+// only for screen to display the results
+bool display_calibration_should_show_results(void);

@@ -121,6 +121,12 @@ void rtos_mutex_unlock(const rtos_mutex_t mutex) {
 	xSemaphoreGive(handle);
 }
 
+unsigned rtos_get_time(void) {
+	const TickType_t ticks = xTaskGetTickCount();
+	const unsigned ms = (unsigned)pdTICKS_TO_MS(ticks);
+	return ms;
+}
+
 static void rtos_fault_handler(void) {
 	while(1) {
 	};
