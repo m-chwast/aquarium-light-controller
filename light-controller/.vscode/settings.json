@@ -25,7 +25,7 @@
     "--query-driver=**",
     "--compile-commands-dir=/home/mchwast/Projects/aquarium/light-controller/light-controller/build"
   ],
-  "idf.currentSetup": "/home/mchwast/esp/v5.5.2/esp-idf",
+  "idf.currentSetup": "/home/mchwast/.espressif/v5.5.5/esp-idf",
   "idf.openOcdConfigs": [
     "board/esp32c3-builtin.cfg"
   ],
