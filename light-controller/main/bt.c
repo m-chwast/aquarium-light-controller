@@ -2,24 +2,43 @@
 
 #include <stdio.h>
 
+#include "bt_request.h"
 #include "esp_log.h"
 #include "esp_nimble_hci.h"
 #include "host/ble_gap.h"
 #include "host/ble_hs.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
+#include "rtos.h"
 
-static const char* TAG = "BLE_SCAN";
+#define TAG "BLE"
+
+typedef struct bt_t {
+	rtos_task_t task;
+} bt_t;
+
+static bt_t bt;
 
 static void on_sync(void);
 static void nimble_host_task(void* param);
 
+static void bt_task(void* param);
+
 void bt_init(void) {
+	// bt esp stack init
+
 	ESP_ERROR_CHECK(nimble_port_init());
 
 	ble_hs_cfg.sync_cb = on_sync;
 
 	nimble_port_freertos_init(nimble_host_task);
+
+	// app code init
+
+	bt_request_init();
+
+	bt.task = rtos_create_task(bt_task, TAG, RTOS_TASK_STACK_SIZE_2KB,
+							   RTOS_PRIORITY_LOW);
 }
 
 static int gap_event(struct ble_gap_event* event, void* arg) {
@@ -87,4 +106,26 @@ static void on_sync(void) { start_scan(); }
 static void nimble_host_task(void* param) {
 	nimble_port_run();
 	nimble_port_freertos_deinit();
+}
+
+static void bt_task(void* param) {
+	bt_request_type_t request_type = BT_REQUEST_TYPE_NONE;
+
+	while(1) {
+		switch(request_type) {
+			case BT_REQUEST_TYPE_START_SCAN:
+				start_scan();
+				break;
+			case BT_REQUEST_TYPE_NONE:
+				break;
+			default:
+				break;
+		}
+
+		if(request_type == BT_REQUEST_TYPE_NONE) {
+			rtos_delay_ms(100);
+		}
+
+		request_type = bt_request_receive();
+	}
 }

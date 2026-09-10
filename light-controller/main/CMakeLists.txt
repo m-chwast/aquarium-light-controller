@@ -4,6 +4,7 @@ idf_component_register(
         "main_app_entry.c"
         "rtos.c"
         "bt.c"
+        "bt_request.c"
         "settings.c"
         "console/console.c"
         "console/console_cmd.c"

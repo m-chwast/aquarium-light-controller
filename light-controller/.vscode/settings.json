@@ -23,15 +23,14 @@
   "clangd.arguments": [
     "--background-index",
     "--query-driver=**",
-    "--compile-commands-dir=/home/mchwast/Projects/aquarium/light-controller/light-controller/build"
+    "--compile-commands-dir=/home/mchwast/Projects/aquarium-light-controller/light-controller/build"
   ],
   "idf.currentSetup": "/home/mchwast/.espressif/v5.5.5/esp-idf",
   "idf.openOcdConfigs": [
     "board/esp32c3-builtin.cfg"
   ],
   "idf.customExtraVars": {
-    "IDF_TARGET": "esp32c3",
-    "OPENOCD_USB_ADAPTER_LOCATION": "3-5"
+    "IDF_TARGET": "esp32c3"
   },
   "idf.port": "/dev/ttyACM0",
   "idf.flashType": "JTAG"
