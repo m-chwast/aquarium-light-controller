@@ -16,6 +16,9 @@ void console_cmd_process(const char* cmd) {
 	else if(console_cmd_is_equal(cmd, "calib_abort")) {
 		console_cmd_handles_calib_abort();
 	}
+	else if(console_cmd_is_equal(cmd, "bt_scan")) {
+		console_cmd_handles_bt_scan();
+	}
 	else {
 		ESP_LOGW(CONSOLE_CMD_TAG, "Unknown command: %s", cmd);
 	}
