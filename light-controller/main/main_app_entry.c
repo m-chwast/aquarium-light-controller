@@ -1,6 +1,6 @@
 #include "main_app_entry.h"
 
-#include "bt.h"
+#include "bt/bt.h"
 #include "console/console.h"
 #include "display/display.h"
 #include "rtos.h"

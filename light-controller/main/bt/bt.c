@@ -114,6 +114,7 @@ static void bt_task(void* param) {
 	while(1) {
 		switch(request_type) {
 			case BT_REQUEST_TYPE_START_SCAN:
+				ESP_LOGI(TAG, "Starting scan");
 				start_scan();
 				break;
 			case BT_REQUEST_TYPE_NONE:
